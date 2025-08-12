@@ -13,24 +13,21 @@ gum.pkg-path = "gum"  # For pretty CLI interactions
 jq.pkg-path = "jq"    # For JSON parsing/validation
 
 [vars]
-# Python environment - must be defined first
-PYTHON_DIR = "$FLOX_ENV_CACHE/python"
-
-# Goose configuration
-GOOSE_INSTALL_PACKAGE = "goose-ai"
-GOOSE_CONFIG_DIR = "$HOME/.config/goose"
-GOOSE_DEMO_DIR = "./goose-demo"
-GOOSE_BIN = "$PYTHON_DIR/bin/goose"
-
 # API configuration (set these as environment variables before activating)
 ANTHROPIC_API_KEY = "${ANTHROPIC_API_KEY:-}"
 OPENAI_API_KEY = "${OPENAI_API_KEY:-}"
 ACI_API_KEY = "${ACI_API_KEY:-}"
 
+# Goose configuration
+GOOSE_INSTALL_PACKAGE = "goose-ai"
+GOOSE_CONFIG_DIR = "$HOME/.config/goose"
+GOOSE_DEMO_DIR = "./goose-demo"
+
 [hook]
 # Activation hook to set up Python virtual environment and install Goose
 on-activate = '''
   export PYTHON_DIR="$FLOX_ENV_CACHE/python"
+  export GOOSE_BIN="$PYTHON_DIR/bin/goose"
   export PATH="$PYTHON_DIR/bin:$PATH"
   
   # Create virtual environment if it doesn't exist
@@ -78,6 +75,8 @@ on-activate = '''
 [services.goose-session]
 # Optional service to run Goose in a specific directory
 command = '''
+  export PYTHON_DIR="$FLOX_ENV_CACHE/python"
+  export GOOSE_BIN="$PYTHON_DIR/bin/goose"
   cd "$GOOSE_DEMO_DIR"
   "$GOOSE_BIN" session
 '''
