@@ -39,12 +39,25 @@ flox init
 flox activate
 ```
 
-### 3. Start the RAG stack
+### 3. Setup Ollama models (first time only)
+
+Before starting the stack for the first time, you need to pull the required models:
+
+```bash
+./setup-models.sh
+```
+
+This will:
+- Start Ollama if not running
+- Pull the llama3 model for text generation
+- Pull the mxbai-embed-large model for embeddings
+
+### 4. Start the RAG stack
 
 Use the provided script to start all services:
 
 ```bash
-./start-stack.sh
+./start-verba.sh
 ```
 
 Or manually start services:
@@ -59,7 +72,7 @@ flox services start ollama    # LLM server
 flox services start verba     # UI
 ```
 
-### 4. Access the application
+### 5. Access the application
 
 Once all services are running:
 - **Verba UI**: http://localhost:8000
