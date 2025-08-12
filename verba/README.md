@@ -44,13 +44,20 @@ flox activate
 Before starting the stack for the first time, you need to pull the required models:
 
 ```bash
+# Option 1: Use the wrapper script (recommended)
+./setup-models-wrapper.sh
+
+# Option 2: Run within activated Flox environment
+flox activate
 ./setup-models.sh
 ```
 
 This will:
 - Start Ollama if not running
-- Pull the llama3 model for text generation
+- Pull the llama3 model for text generation (4.7 GB)
 - Pull the mxbai-embed-large model for embeddings
+
+Note: Model downloads may take several minutes depending on your internet connection.
 
 ### 4. Start the RAG stack
 

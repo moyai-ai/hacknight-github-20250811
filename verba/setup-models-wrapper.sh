@@ -1,11 +1,18 @@
 #!/bin/bash
-# Setup and pull required Ollama models for Verba
-# This script must be run from within an activated Flox environment
+# Wrapper script to setup Ollama models within Flox environment
 
 set -e
 
 echo "🔧 Setting up Ollama models for Verba..."
 echo ""
+
+# Check if Flox is installed
+if ! command -v flox &> /dev/null; then
+    echo "❌ Error: Flox is not installed."
+    echo "Please install Flox first:"
+    echo "  brew install flox"
+    exit 1
+fi
 
 # Check if we're in the right directory
 if [ ! -f "manifest.toml" ]; then
@@ -14,23 +21,13 @@ if [ ! -f "manifest.toml" ]; then
     exit 1
 fi
 
-# Check if we're in a Flox environment by looking for ollama
-if ! command -v ollama &> /dev/null; then
-    echo "❌ Error: Ollama not found. This script must be run from within the Flox environment."
-    echo ""
-    echo "Please run one of the following:"
-    echo ""
-    echo "Option 1 - Use the wrapper script (recommended):"
-    echo "  ./setup-models-wrapper.sh"
-    echo ""
-    echo "Option 2 - Activate Flox first:"
-    echo "  flox activate"
-    echo "  ./setup-models.sh"
-    echo ""
-    echo "Option 3 - Run directly with Flox:"
-    echo "  flox activate -- ./setup-models.sh"
-    exit 1
-fi
+# Run the setup within the Flox environment
+echo "📦 Activating Flox environment and setting up models..."
+echo ""
+
+# Execute the actual setup script within the Flox environment
+flox activate -- bash -c '
+set -e
 
 # Function to check if Ollama is responding
 check_ollama() {
@@ -66,7 +63,7 @@ echo ""
 echo "📥 Pulling required models..."
 echo ""
 
-# Pull models directly since we're already in the Flox environment
+# Pull models
 echo "Pulling llama3 model (this may take a while)..."
 if ollama pull llama3; then
     echo "✅ llama3 model pulled successfully"
@@ -85,13 +82,15 @@ fi
 echo ""
 echo "🎉 Model setup complete!"
 echo ""
+
+# If we started Ollama for this script, keep it running for a moment to finish
+if [ ! -z "$OLLAMA_PID" ]; then
+    echo "Shutting down temporary Ollama service..."
+    kill $OLLAMA_PID 2>/dev/null || true
+fi
+'
+
+echo ""
 echo "Next steps:"
 echo "  1. Start all services: ./start-verba.sh"
 echo "  2. Access Verba at: http://localhost:8000"
-echo ""
-
-# If we started Ollama for this script, offer to keep it running
-if [ ! -z "$OLLAMA_PID" ]; then
-    echo "Note: Ollama is still running in the background."
-    echo "You can stop it with: pkill ollama"
-fi
