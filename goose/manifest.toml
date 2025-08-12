@@ -1,0 +1,84 @@
+# Flox environment manifest for Goose AI Agent
+# This configuration sets up a complete environment for running Goose AI agent
+# with all required dependencies in an isolated, reproducible manner
+
+version = 1
+
+[install]
+# Python 3.11 for running Goose
+python311.pkg-path = "python311"
+
+# Additional utilities
+gum.pkg-path = "gum"  # For pretty CLI interactions
+jq.pkg-path = "jq"    # For JSON parsing/validation
+
+[vars]
+# Goose configuration
+GOOSE_INSTALL_PACKAGE = "goose-ai"
+GOOSE_CONFIG_DIR = "$HOME/.config/goose"
+GOOSE_DEMO_DIR = "./goose-demo"
+
+# Python environment
+PYTHON_DIR = "$FLOX_ENV_CACHE/python"
+GOOSE_BIN = "$PYTHON_DIR/bin/goose"
+
+# API configuration (can be overridden)
+ANTHROPIC_API_KEY = "${ANTHROPIC_API_KEY:-}"
+OPENAI_API_KEY = "${OPENAI_API_KEY:-}"
+
+[hook]
+# Activation hook to set up Python virtual environment and install Goose
+on-activate = '''
+  export PYTHON_DIR="$FLOX_ENV_CACHE/python"
+  export PATH="$PYTHON_DIR/bin:$PATH"
+  
+  # Create virtual environment if it doesn't exist
+  if [ ! -d "$PYTHON_DIR" ]; then
+    echo "Creating Python virtual environment..."
+    gum spin -s globe --title "Creating venv in $PYTHON_DIR..." -- python -m venv "$PYTHON_DIR"
+  fi
+  
+  # Install/update Goose package
+  if [ ! -f "$GOOSE_BIN" ] || [ "${GOOSE_UPDATE:-}" = "true" ]; then
+    echo "Installing/updating Goose AI agent..."
+    gum spin -s monkey --title "Installing/updating Goose..." -- \
+      "$PYTHON_DIR/bin/pip" install --upgrade "$GOOSE_INSTALL_PACKAGE"
+  fi
+  
+  # Create demo directory if it doesn't exist
+  if [ ! -d "$GOOSE_DEMO_DIR" ]; then
+    mkdir -p "$GOOSE_DEMO_DIR"
+    echo "Created demo directory at $GOOSE_DEMO_DIR"
+  fi
+  
+  # Check for API keys
+  if [ -z "$ANTHROPIC_API_KEY" ] && [ -z "$OPENAI_API_KEY" ]; then
+    echo ""
+    echo "⚠️  Warning: No API keys detected in environment"
+    echo "   Set one of the following:"
+    echo "   • export ANTHROPIC_API_KEY='your-key'"
+    echo "   • export OPENAI_API_KEY='your-key'"
+  fi
+  
+  echo ""
+  echo "🦆 Goose AI Agent Environment Activated!"
+  echo ""
+  echo "Available commands:"
+  echo "  • goose configure     - Configure Goose with your API key"
+  echo "  • goose session       - Start a new Goose session"
+  echo "  • goose --help        - Show all available commands"
+  echo ""
+  echo "Quick start:"
+  echo "  1. Configure: goose configure"
+  echo "  2. Start session: cd $GOOSE_DEMO_DIR && goose session"
+  echo ""
+'''
+
+[services.goose-session]
+# Optional service to run Goose in a specific directory
+command = '''
+  cd "$GOOSE_DEMO_DIR"
+  "$GOOSE_BIN" session
+'''
+is-daemon = false
+shutdown.command = "pkill -f 'goose session'"
