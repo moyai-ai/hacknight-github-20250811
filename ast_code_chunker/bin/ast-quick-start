@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Quick start script for AST Code Chunker in Flox environment
+
+set -e
+
+echo "🚀 AST Code Chunker Quick Start"
+echo "================================"
+echo ""
+
+# Check if we're in a Flox environment
+if [ -z "$FLOX_ENV" ]; then
+    echo "⚠️  Not in a Flox environment!"
+    echo "Please run: flox activate"
+    exit 1
+fi
+
+# Step 1: Check services
+echo "1️⃣  Checking services..."
+python "$FLOX_ENV_PROJECT/cli.py" check-services || {
+    echo ""
+    echo "Starting services..."
+    flox services start weaviate &
+    flox services start ollama &
+    echo "Waiting for services to start (30 seconds)..."
+    sleep 30
+}
+
+# Step 2: Initialize models
+echo ""
+echo "2️⃣  Initializing models..."
+python "$FLOX_ENV_PROJECT/cli.py" init-models
+
+# Step 3: Initialize schema
+echo ""
+echo "3️⃣  Initializing Weaviate schema..."
+python "$FLOX_ENV_PROJECT/cli.py" init-schema
+
+# Step 4: Show example commands
+echo ""
+echo "✅ Setup complete! Here are some example commands:"
+echo ""
+echo "Index a file:"
+echo "  ast-chunk index-file example.py"
+echo ""
+echo "Index a directory:"
+echo "  ast-chunk index-directory ./src -e .py -e .js"
+echo ""
+echo "Search your code:"
+echo "  ast-chunk search 'database connection'"
+echo ""
+echo "Ask questions:"
+echo "  ast-chunk ask 'How does the authentication work?'"
+echo ""
+echo "View statistics:"
+echo "  ast-chunk stats"
