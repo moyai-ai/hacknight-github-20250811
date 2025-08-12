@@ -1,0 +1,152 @@
+## Flox Environment Manifest -----------------------------------------
+##
+##   _Everything_ you need to know about the _manifest_ is here:
+##
+##               https://flox.dev/docs/concepts/manifest
+##
+## -------------------------------------------------------------------
+# Flox manifest version managed by Flox CLI
+version = 1
+
+
+## Install Packages --------------------------------------------------
+##  $ flox install gum  <- puts a package in [install] section below
+##  $ flox search gum   <- search for a package
+##  $ flox show gum     <- show all versions of a package
+## -------------------------------------------------------------------
+[install]
+python310.pkg-path = "python310"
+ollama.pkg-path = "ollama"
+weaviate.pkg-path = "weaviate"
+curl.pkg-path = "curl"
+jq.pkg-path = "jq"
+ripgrep.pkg-path = "ripgrep"
+git.pkg-path = "git"
+# gum.pkg-path = "gum"
+# gum.version = "^0.14.5"
+
+
+## Environment Variables ---------------------------------------------
+##  ... available for use in the activated environment
+##      as well as [hook], [profile] scripts and [services] below.
+## -------------------------------------------------------------------
+[vars]
+WEAVIATE_PORT = "8080"
+OLLAMA_PORT = "11434"
+OLLAMA_EMBED_MODEL = "mxbai-embed-large"
+OLLAMA_CHAT_MODEL = "llama3.2"
+
+
+## Activation Hook ---------------------------------------------------
+##  ... run by _bash_ shell when you run 'flox activate'.
+## -------------------------------------------------------------------
+[hook]
+on-activate = '''
+  # Export variables
+  export PYTHON_VENV_DIR="$FLOX_ENV_CACHE/ast_chunker_venv"
+  export PYTHONPATH="$FLOX_ENV_PROJECT:$PYTHON_VENV_DIR/lib/python3.10/site-packages"
+  export DATA_DIR="$FLOX_ENV_CACHE/data"
+  export WEAVIATE_DATA="$DATA_DIR/weaviate"
+  export OLLAMA_DATA="$DATA_DIR/ollama"
+  
+  # Create necessary directories
+  mkdir -p "$DATA_DIR" "$WEAVIATE_DATA" "$OLLAMA_DATA"
+  
+  # Initialize Python virtual environment if needed
+  if [ ! -d "$PYTHON_VENV_DIR" ]; then
+    echo "🐍 Creating Python virtual environment..."
+    python -m venv "$PYTHON_VENV_DIR"
+    
+    # Activate venv and install dependencies
+    source "$PYTHON_VENV_DIR/bin/activate"
+    
+    echo "📦 Installing Python dependencies..."
+    pip install --upgrade pip setuptools wheel
+    pip install weaviate-client>=3.24.0 ollama>=0.1.7
+    pip install jedi>=0.18.0 pathspec>=0.11.0
+    pip install click>=8.1.0 rich>=13.0.0
+  else
+    source "$PYTHON_VENV_DIR/bin/activate"
+  fi
+  
+  # Create helper function
+  ast_chunk() {
+    python "$FLOX_ENV_PROJECT/cli.py" "$@"
+  }
+  export -f ast_chunk
+  
+  # Create aliases
+  alias ast-index="ast_chunk index-file"
+  alias ast-search="ast_chunk search"
+  alias ast-ask="ast_chunk ask"
+  
+  echo ""
+  echo "🚀 AST Code Chunker Ready!"
+  echo "Commands: ast-chunk --help"
+'''
+
+
+## Profile script ----------------------------------------------------
+## ... sourced by _your shell_ when you run 'flox activate'.
+## -------------------------------------------------------------------
+[profile]
+# common = '''
+#   gum style \
+#   --foreground 212 --border-foreground 212 --border double \
+#   --align center --width 50 --margin "1 2" --padding "2 4" \
+#     $INTRO_MESSAGE
+# '''
+## Shell-specific customizations such as setting aliases go here:
+# bash = ...
+# zsh  = ...
+# fish = ...
+
+
+## Services ---------------------------------------------------------
+##  $ flox services start             <- Starts all services
+##  $ flox services status            <- Status of running services
+##  $ flox activate --start-services  <- Activates & starts all
+## ------------------------------------------------------------------
+[services]
+weaviate.command = "weaviate --host 0.0.0.0 --port $WEAVIATE_PORT --scheme http"
+weaviate.is-daemon = false
+
+ollama.command = "OLLAMA_MODELS=$OLLAMA_DATA/models ollama serve"
+ollama.is-daemon = false
+
+
+## Include ----------------------------------------------------------
+## ... environments to create a composed environment
+## ------------------------------------------------------------------
+[include]
+# environments = [
+#     { dir = "../common" }
+# ]
+
+
+## Build and publish your own packages ------------------------------
+##  $ flox build
+##  $ flox publish
+## ------------------------------------------------------------------
+[build]
+# [build.myproject]
+# description = "The coolest project ever"
+# version = "0.0.1"
+# command = """
+#   mkdir -p $out/bin
+#   cargo build --release
+#   cp target/release/myproject $out/bin/myproject
+# """
+
+
+## Other Environment Options -----------------------------------------
+[options]
+# Systems that environment is compatible with
+# systems = [
+#   "aarch64-darwin",
+#   "aarch64-linux",
+#   "x86_64-darwin",
+#   "x86_64-linux",
+# ]
+# Uncomment to disable CUDA detection.
+# cuda-detection = false

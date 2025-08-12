@@ -7,33 +7,72 @@ echo "🚀 AST Code Chunker Quick Start"
 echo "================================"
 echo ""
 
-# Check if we're in a Flox environment
+# Get the directory of this script
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Check if we're in a Flox environment - if not, activate it
 if [ -z "$FLOX_ENV" ]; then
-    echo "⚠️  Not in a Flox environment!"
-    echo "Please run: flox activate"
-    exit 1
-fi
-
-# Step 1: Check services
-echo "1️⃣  Checking services..."
-python "$FLOX_ENV_PROJECT/cli.py" check-services || {
+    echo "📦 Activating Flox environment..."
+    cd "$PROJECT_DIR"
+    
+    # Run everything in the Flox environment
+    flox activate -- bash -c '
+        # Step 1: Start services
+        echo "1️⃣  Starting services..."
+        flox services start weaviate &
+        flox services start ollama &
+        echo "Waiting for services to start (30 seconds)..."
+        sleep 30
+        
+        # Step 2: Initialize models
+        echo ""
+        echo "2️⃣  Initializing models..."
+        python "$FLOX_ENV_PROJECT/cli.py" init-models
+        
+        # Step 3: Initialize schema
+        echo ""
+        echo "3️⃣  Initializing Weaviate schema..."
+        python "$FLOX_ENV_PROJECT/cli.py" init-schema
+        
+        # Keep the environment active
+        echo ""
+        echo "✅ Setup complete! Services are running."
+        echo ""
+        echo "The environment will stay active. Press Ctrl+C to stop."
+        echo ""
+        echo "In another terminal, run:"
+        echo "  cd $(pwd)"
+        echo "  flox activate"
+        echo ""
+        echo "Then use the AST chunker commands as shown below."
+        
+        # Keep services running
+        wait
+    '
+else
+    # We're already in a Flox environment
+    # Step 1: Check services
+    echo "1️⃣  Checking services..."
+    python "$FLOX_ENV_PROJECT/cli.py" check-services || {
+        echo ""
+        echo "Starting services..."
+        flox services start weaviate &
+        flox services start ollama &
+        echo "Waiting for services to start (30 seconds)..."
+        sleep 30
+    }
+    
+    # Step 2: Initialize models
     echo ""
-    echo "Starting services..."
-    flox services start weaviate &
-    flox services start ollama &
-    echo "Waiting for services to start (30 seconds)..."
-    sleep 30
-}
-
-# Step 2: Initialize models
-echo ""
-echo "2️⃣  Initializing models..."
-python "$FLOX_ENV_PROJECT/cli.py" init-models
-
-# Step 3: Initialize schema
-echo ""
-echo "3️⃣  Initializing Weaviate schema..."
-python "$FLOX_ENV_PROJECT/cli.py" init-schema
+    echo "2️⃣  Initializing models..."
+    python "$FLOX_ENV_PROJECT/cli.py" init-models
+    
+    # Step 3: Initialize schema
+    echo ""
+    echo "3️⃣  Initializing Weaviate schema..."
+    python "$FLOX_ENV_PROJECT/cli.py" init-schema
+fi
 
 # Step 4: Show example commands
 echo ""
