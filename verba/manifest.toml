@@ -1,0 +1,110 @@
+# Flox environment manifest for Verba RAG Stack
+# This configuration sets up a complete RAG (Retrieval-Augmented Generation) stack
+# with Weaviate vector database, Ollama for LLM inference, and Verba as the UI
+
+version = 1
+
+[install]
+# Python 3.10 for running Verba
+python310.pkg-path = "python310"
+
+# Weaviate vector database for storing and querying embeddings
+weaviate.pkg-path = "weaviate"
+weaviate.version = "1.25.9"
+
+# Ollama for local LLM inference
+ollama.pkg-path = "ollama"
+ollama.version = "0.3.5"
+
+# Additional utilities
+gum.pkg-path = "gum"  # For pretty CLI interactions
+
+[vars]
+# Verba configuration
+VERBA_INSTALL_PACKAGE = "goldenverba"
+WEAVIATE_URL_VERBA = "http://localhost:8080"
+
+# Data persistence
+PERSISTENCE_DATA_PATH = "./verba-data"
+
+# Authentication settings
+AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED = "true"
+QUERY_DEFAULTS_LIMIT = "25"
+DEFAULT_VECTORIZER_MODULE = "none"
+
+# Ollama configuration
+OLLAMA_URL = "http://localhost:11434"
+OLLAMA_MODEL = "llama3"
+OLLAMA_EMBED_MODEL = "mxbai-embed-large"
+
+# Python environment
+PYTHON_DIR = "$FLOX_ENV_CACHE/python"
+
+[hook]
+# Activation hook to set up Python virtual environment and install Verba
+on-activate = '''
+  export PYTHON_DIR="$FLOX_ENV_CACHE/python"
+  
+  # Create virtual environment if it doesn't exist
+  if [ ! -d "$PYTHON_DIR" ]; then
+    echo "Creating Python virtual environment..."
+    gum spin -s globe --title "Creating venv in $PYTHON_DIR..." -- python -m venv "$PYTHON_DIR"
+  fi
+  
+  # Install/update Verba package
+  (
+    source "$PYTHON_DIR/bin/activate"
+    echo "Installing/updating Verba package..."
+    gum spin -s monkey --title "Installing/updating Verba..." -- pip install --upgrade "$VERBA_INSTALL_PACKAGE"
+  )
+  
+  # Create data directory if it doesn't exist
+  if [ ! -d "$PERSISTENCE_DATA_PATH" ]; then
+    mkdir -p "$PERSISTENCE_DATA_PATH"
+    echo "Created data directory at $PERSISTENCE_DATA_PATH"
+  fi
+  
+  echo ""
+  echo "🚀 Verba RAG Stack Environment Activated!"
+  echo ""
+  echo "Available services:"
+  echo "  • flox services start weaviate  - Start Weaviate vector database"
+  echo "  • flox services start ollama    - Start Ollama LLM server"
+  echo "  • flox services start verba     - Start Verba UI"
+  echo ""
+  echo "Or start all services at once:"
+  echo "  • flox services start"
+  echo ""
+  echo "Once started, access Verba at: http://localhost:8000"
+'''
+
+[services.weaviate]
+# Weaviate vector database service
+command = '''
+  weaviate \
+    --host 0.0.0.0 \
+    --port 8080 \
+    --scheme http \
+    --config-file "$FLOX_ENV_CACHE/weaviate.conf"
+'''
+is-daemon = false
+
+[services.ollama]
+# Ollama LLM server service
+command = "ollama serve"
+is-daemon = false
+
+[services.verba]
+# Verba UI service
+command = '''
+  source "$PYTHON_DIR/bin/activate"
+  verba start \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --model-url "$OLLAMA_URL" \
+    --model-type ollama \
+    --model "$OLLAMA_MODEL" \
+    --embedding-model "$OLLAMA_EMBED_MODEL"
+'''
+is-daemon = false
+shutdown.command = "pkill -f 'verba start'"
