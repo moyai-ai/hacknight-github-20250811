@@ -48,15 +48,17 @@ on-activate = '''
   # Create virtual environment if it doesn't exist
   if [ ! -d "$PYTHON_DIR" ]; then
     echo "Creating Python virtual environment..."
-    gum spin -s globe --title "Creating venv in $PYTHON_DIR..." -- python -m venv "$PYTHON_DIR"
+    python -m venv "$PYTHON_DIR"
   fi
   
   # Install/update Verba package
-  (
-    source "$PYTHON_DIR/bin/activate"
-    echo "Installing/updating Verba package..."
-    gum spin -s monkey --title "Installing/updating Verba..." -- pip install --upgrade "$VERBA_INSTALL_PACKAGE"
-  )
+  if [ -f "$PYTHON_DIR/bin/activate" ]; then
+    (
+      source "$PYTHON_DIR/bin/activate"
+      echo "Installing/updating Verba package..."
+      pip install --upgrade "$VERBA_INSTALL_PACKAGE" 2>/dev/null || pip install "$VERBA_INSTALL_PACKAGE"
+    )
+  fi
   
   # Create data directory if it doesn't exist
   if [ ! -d "$PERSISTENCE_DATA_PATH" ]; then
