@@ -81,7 +81,7 @@ check_and_pull_models() {
 export -f check_and_pull_models
 
 # Start services and run model pulling in the activated environment
-exec flox activate --start-services --command "
+exec flox activate --start-services -- bash -c "
     # Run model pulling in background after a delay
     (sleep 10 && check_and_pull_models) &
     
