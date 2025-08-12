@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Flox
+.flox/
+.flox.lock
+
+# Data directories (created by Flox environment)
+data/
+verba-data/
+weaviate-data/
+ollama-data/
+index-data/
+
+# Test outputs
+test_chunks.json
+*.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment
+.env
+.envrc.local
+
+# Temporary files
+tmp/
+temp/
+*.tmp
