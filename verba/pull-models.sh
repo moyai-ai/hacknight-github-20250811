@@ -13,11 +13,11 @@ if ! curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
 fi
 
 echo "Pulling llama3 model (this may take a while)..."
-flox activate -- ollama pull llama3
+ollama pull llama3
 
 echo ""
 echo "Pulling mxbai-embed-large model for embeddings..."
-flox activate -- ollama pull mxbai-embed-large
+ollama pull mxbai-embed-large
 
 echo ""
 echo "✅ Models pulled successfully!"
